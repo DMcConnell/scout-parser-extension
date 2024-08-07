@@ -3,7 +3,7 @@
   "name": "Travstat Scout Parser",
   "version": "1.0",
   "description": "Made by Carni \\o/",
-  "permissions": ["activeTab", "scripting", "identity"],
+  "permissions": ["activeTab", "scripting"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -12,16 +12,9 @@
       "128": "images/icon128.png"
     }
   },
-  "background": {
-    "service_worker": "background.js"
-  },
   "icons": {
     "16": "images/icon16.png",
     "48": "images/icon48.png",
     "128": "images/icon128.png"
-  },
-  "oauth2": {
-    "client_id": "894042150815-v11til420qnd88rqoag9u82kcsa1o349.apps.googleusercontent.com",
-    "scopes": ["https://www.googleapis.com/auth/spreadsheets"]
   }
 }

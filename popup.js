@@ -7,7 +7,7 @@ document.getElementById('actionButton').addEventListener('click', () => {
   });
 });
 
-function doAction() {
+async function doAction() {
   const reportWrapper = document.getElementById('reportWrapper');
   const header = reportWrapper.querySelectorAll('div.header')[0];
 
@@ -38,11 +38,31 @@ function doAction() {
     const troopInfo =
       topLevelDiv.querySelectorAll('table')[0].children[1].children[0];
 
-    let unitCounts = [];
-    troopInfo.querySelectorAll('td').forEach((td) => {
-      unitCounts.push(td.innerText);
-    });
-    unitCountsList.push(unitCounts);
+    const firstTroopName = topLevelDiv
+      .querySelectorAll('table')[0]
+      .children[0].children[0].querySelectorAll('td')[0].children[0].alt;
+
+    console.log('Tribe Info: ', firstTroopName);
+
+    // console.log('Troop Info: ', troopInfo);
+    try {
+      let unitCounts = {};
+      let tdElements = troopInfo.querySelectorAll('td');
+
+      unitCounts['firstTroopName'] = firstTroopName;
+
+      for (let i = 0; i < 11; i++) {
+        if (tdElements[i]) {
+          unitCounts[`t${i}`] = tdElements[i].textContent.trim();
+        } else {
+          unitCounts[`t${i}`] = '0'; // or any default value you prefer
+        }
+      }
+
+      unitCountsList.push(unitCounts);
+    } catch (error) {
+      console.error('Error: ', error);
+    }
   });
 
   reportKey = `${dateTime}-${playerName}-${villageName}`;
@@ -54,34 +74,24 @@ function doAction() {
   );
   console.log('All Units: ', unitCountsList);
 
-  // Retrieve the token from chrome.storage.local
-  chrome.storage.local.get(['token'], function (result) {
-    console.log('Token Value currently is ' + result);
-    const token = result.token;
-
-    const sheetId = '11UucshbOYq92GI-wCVFolyghNP7KlW4oPpkgM7aAJg0';
-    const range = 'Sheet1!A1';
-    const valueInputOption = 'USER_ENTERED';
-    const values = [[reportKey]];
-    const body = {
-      values: values,
-    };
-
-    fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?valueInputOption=${valueInputOption}`,
-      {
-        method: 'PUT',
-        headers: {
-          Authorization: 'Bearer ' + token,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
+  // Make the fetch request to the server with the report
+  try {
+    const response = await fetch('http://localhost:8080/scout/report', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    )
-      .then((response) => response.json())
-      .then(function (data) {
-        console.log(data);
-      })
-      .catch((error) => console.log(error));
-  });
+      body: JSON.stringify({
+        reportKey: reportKey,
+        reportDate: dateTime,
+        playerName: playerName,
+        villageName: villageName,
+        allianceName: allianceName,
+        playerTribe: defenderTribe,
+        troopCounts: unitCountsList,
+      }),
+    });
+  } catch (error) {
+    console.error('Error: ', error);
+  }
 }
