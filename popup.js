@@ -65,6 +65,48 @@ async function doAction() {
     }
   });
 
+  function extractKarteLinks(htmlString) {
+    // Regex pattern to match the karte.php link
+    const pattern = /href="(\/karte\.php\?d=\d+)"/g;
+
+    // Find all matches
+    const matches = [];
+    let match;
+    while ((match = pattern.exec(htmlString)) !== null) {
+      matches.push(match[1]);
+    }
+
+    // Convert the matches to full URLs if needed
+    // Uncomment and modify the baseUrl if you want full URLs
+    // const baseUrl = "https://your-domain.com";
+    // const fullUrls = matches.map(match => baseUrl + match);
+
+    // Convert the list to JSON
+    return JSON.stringify(matches);
+  }
+
+  const reportLink = document.location.href;
+
+  const karteLinks = extractKarteLinks(document.body.innerHTML);
+  console.log('Karte Links: ', karteLinks);
+
+  const parsedKarteLinks = JSON.parse(karteLinks);
+
+  let villageLink = null;
+  try {
+    if (parsedKarteLinks.length >= 2) {
+      villageLink = parsedKarteLinks[1];
+      console.log('Village Link: ', villageLink);
+    } else if (parsedKarteLinks.length === 1) {
+      villageLink = parsedKarteLinks[0];
+      console.log('Only one Village Link found: ', villageLink);
+    } else {
+      console.log('No Village Links found.');
+    }
+  } catch (error) {
+    console.error('Error: ', error);
+  }
+
   reportKey = `${dateTime}-${playerName}-${villageName}`;
 
   console.log(`Report Key: ${reportKey}`);
@@ -83,9 +125,11 @@ async function doAction() {
       },
       body: JSON.stringify({
         reportKey: reportKey,
+        reportLink: reportLink,
         reportDate: dateTime,
         playerName: playerName,
         villageName: villageName,
+        villageLink: villageLink,
         allianceName: allianceName,
         playerTribe: defenderTribe,
         troopCounts: unitCountsList,
