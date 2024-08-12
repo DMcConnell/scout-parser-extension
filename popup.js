@@ -188,8 +188,8 @@ async function doAction() {
   async function sendReportData(reportData) {
     try {
       const response = await fetch(
-        // "https://boink-op-planning.mesgexchange.io/scout/report",
-        "http://localhost:8080/scout/report",
+        "https://boink-op-planning.mesgexchange.io/scout/report",
+        //"http://localhost:8080/scout/report",
         {
           method: "POST",
           headers: {
