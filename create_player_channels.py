@@ -34,6 +34,8 @@ async def add_alliance_channels(message, alliance_name):
 
     with open(f'server_rosters/{alliance_name}.txt', 'r') as roster:
         sword_roster = roster.read().splitlines()
+        sword_roster = [item.lower() for item in sword_roster]
+        sword_roster.sort()
         for line in sword_roster:
             if line[0:1].isalpha():
                 try: 
