@@ -1,5 +1,5 @@
 // Event listener setup
-document.getElementById("actionButton").addEventListener("click", () => {
+document.getElementById('actionButton').addEventListener('click', () => {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     chrome.scripting.executeScript({
       target: { tabId: tabs[0].id },
@@ -11,16 +11,16 @@ document.getElementById("actionButton").addEventListener("click", () => {
 async function doAction() {
   // Utility functions
   function getDateTime(header) {
-    return header.querySelectorAll("div.time")[0].children[0].innerText;
+    return header.querySelectorAll('div.time')[0].children[0].innerText;
   }
 
   function getDefenderTribe(reportWrapper) {
-    return reportWrapper.querySelectorAll("img.tribe")[0].classList[1];
+    return reportWrapper.querySelectorAll('img.tribe')[0].classList[1];
   }
 
   function getPlayerInfo(topLevelDiv) {
     const playerInfoElem =
-      topLevelDiv.querySelectorAll("div.troopHeadline")[0].children[0];
+      topLevelDiv.querySelectorAll('div.troopHeadline')[0].children[0];
     return {
       allianceName: playerInfoElem.children[0].innerText,
       playerName: playerInfoElem.children[1].innerText,
@@ -31,22 +31,22 @@ async function doAction() {
   function getUnitCounts(topLevelDiv) {
     try {
       const troopInfo =
-        topLevelDiv.querySelectorAll("table")[0].children[1].children[0];
+        topLevelDiv.querySelectorAll('table')[0].children[1].children[0];
       const firstTroopName = topLevelDiv
-        .querySelectorAll("table")[0]
-        .children[0].children[0].querySelectorAll("td")[0].children[0].alt;
-      const tdElements = troopInfo.querySelectorAll("td");
+        .querySelectorAll('table')[0]
+        .children[0].children[0].querySelectorAll('td')[0].children[0].alt;
+      const tdElements = troopInfo.querySelectorAll('td');
       let unitCounts = { firstTroopName };
 
       for (let i = 0; i < 11; i++) {
         unitCounts[`t${i}`] = tdElements[i]
           ? tdElements[i].textContent.trim()
-          : "0";
+          : '0';
       }
 
       return unitCounts;
     } catch (error) {
-      console.error("Error in getUnitCounts: ", error);
+      console.error('Error in getUnitCounts: ', error);
       return null;
     }
   }
@@ -71,11 +71,11 @@ async function doAction() {
       } else if (parsedKarteLinks.length === 1) {
         return parsedKarteLinks[0];
       } else {
-        console.log("No Village Links found.");
+        console.log('No Village Links found.');
         return null;
       }
     } catch (error) {
-      console.error("Error in getVillageLink: ", error);
+      console.error('Error in getVillageLink: ', error);
       return null;
     }
   }
@@ -93,28 +93,34 @@ async function doAction() {
     console.log(
       `Player Name: ${playerInfo.playerName}, Village Name: ${playerInfo.villageName}, Alliance Name: ${playerInfo.allianceName}`,
     );
-    console.log("All Units: ", unitCountsList);
-    console.log("Village Link: ", villageLink);
+    console.log('All Units: ', unitCountsList);
+    console.log('Village Link: ', villageLink);
   }
 
-  function extractResources(report) {
+  function extractResources(report, hasScoutArti) {
     // Check if resources section exists
-    const resourcesRow = report
-      .querySelector("table.additionalInformation")
-      .children[0].children[0].querySelector("td");
+    let resourcesRow = report
+      .querySelector('table.additionalInformation')
+      .children[0].children[0].querySelector('td');
     console.log(resourcesRow);
 
+    if (hasScoutArti) {
+      resourcesRow = report
+        .querySelector('table.additionalInformation')
+        .children[0].children[1].querySelector('td');
+    }
+
     if (!resourcesRow) {
-      console.log("Resources section not found");
+      console.log('Resources section not found');
       return null;
     }
 
     // Extract resources
     const resourceCells = resourcesRow.querySelectorAll(
-      ".resourceWrapper .inlineIcon.resources .value",
+      '.resourceWrapper .inlineIcon.resources .value',
     );
     if (resourceCells.length === 0) {
-      console.log("Resources data not found");
+      console.log('Resources data not found');
       return null;
     }
 
@@ -142,23 +148,31 @@ async function doAction() {
     return resources;
   }
 
-  function extractInformation(report) {
+  function extractInformation(report, hasScoutArti) {
     // Check if resources section exists
-    const resourcesRow = report
-      .querySelector("table.additionalInformation")
-      .children[0].children[0].querySelector("td");
+    let resourcesRow = report
+      .querySelector('table.additionalInformation')
+      .children[0].children[0].querySelector('td');
+
+    if (hasScoutArti) {
+      resourcesRow = report
+        .querySelector('table.additionalInformation')
+        .children[0].children[1].querySelector('td');
+    }
+
+    console.log('Resources Row: ', resourcesRow);
 
     if (!resourcesRow) {
-      console.log("Resources section not found");
+      console.log('Resources section not found');
       return null;
     }
 
     // Extract resources
     const resourceCells = resourcesRow.querySelectorAll(
-      ".resourceWrapper .inlineIcon.resources .value",
+      '.resourceWrapper .inlineIcon.resources .value',
     );
     if (resourceCells.length === 0) {
-      console.log("Resources data not found");
+      console.log('Resources data not found');
       return null;
     }
 
@@ -167,19 +181,25 @@ async function doAction() {
     try {
       info = { ...info, firstInfo: resourceCells[0].textContent };
     } catch (error) {
-      console.error("Error in extractInformation: ", error);
+      console.error('Error in extractInformation: ', error);
     }
 
     try {
       info = { ...info, secondInfo: resourceCells[1].textContent };
     } catch (error) {
-      console.error("Error in extractInformation: ", error);
+      console.error('Error in extractInformation: ', error);
     }
 
     try {
       info = { ...info, thirdInfo: resourceCells[2].textContent };
     } catch (error) {
-      console.error("Error in extractInformation: ", error);
+      console.error('Error in extractInformation: ', error);
+    }
+
+    try {
+      info = { ...info, fourthInfo: resourceCells[3].textContent };
+    } catch (error) {
+      console.info('No fourth info found');
     }
 
     return info;
@@ -188,37 +208,37 @@ async function doAction() {
   async function sendReportData(reportData) {
     try {
       const response = await fetch(
-        "https://boink-op-planning.mesgexchange.io/scout/report",
+        'https://boink-op-planning.mesgexchange.io/scout/report',
         //"http://localhost:8080/scout/report",
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify(reportData),
         },
       );
 
       if (!response.ok) {
-        console.error("Failed to send report data:", response.statusText);
+        console.error('Failed to send report data:', response.statusText);
       }
     } catch (error) {
-      console.error("Error in sendReportData: ", error);
+      console.error('Error in sendReportData: ', error);
     }
   }
 
   // MAIN EXECUTION
 
-  const reportWrapper = document.getElementById("reportWrapper");
-  console.log("reportWrapper: ", reportWrapper);
-  const header = reportWrapper.querySelectorAll("div.header")[0];
-  console.log("header: ", header);
+  const reportWrapper = document.getElementById('reportWrapper');
+  console.log('reportWrapper: ', reportWrapper);
+  const header = reportWrapper.querySelectorAll('div.header')[0];
+  console.log('header: ', header);
 
   // Extract report metadata
   const dateTime = getDateTime(header);
-  console.log("DateTime: ", dateTime);
+  console.log('DateTime: ', dateTime);
   const defenderTribe = getDefenderTribe(reportWrapper);
-  console.log("Defender Tribe: ", defenderTribe);
+  console.log('Defender Tribe: ', defenderTribe);
 
   // Initialize variables
   let firstDef = true;
@@ -226,11 +246,11 @@ async function doAction() {
   let unitCountsList = [];
 
   // Process defender information
-  reportWrapper.querySelectorAll("div.role.defender").forEach((topLevelDiv) => {
+  reportWrapper.querySelectorAll('div.role.defender').forEach((topLevelDiv) => {
     if (firstDef) {
       firstDef = false;
       playerInfo = getPlayerInfo(topLevelDiv);
-      console.log("Player Info: ", playerInfo);
+      console.log('Player Info: ', playerInfo);
     }
 
     const unitCounts = getUnitCounts(topLevelDiv);
@@ -255,26 +275,47 @@ async function doAction() {
     villageLink,
   );
 
-  const reportType = reportWrapper
-    .querySelector("table.additionalInformation")
-    .children[0].children[0].querySelector("th").innerText;
-  console.log("Report Type: ", reportType);
+  console.log('reportWrapper: ', reportWrapper);
+
+  let hasScoutArti = false;
+
+  let reportType = reportWrapper
+    .querySelector('table.additionalInformation')
+    .children[0].children[0].querySelector('th').innerText;
+  console.log('Report Type: ', reportType);
+
+  if (reportType === 'Information') {
+    const checkScoutArti = reportWrapper
+      .querySelector('table.additionalInformation')
+      .children[0].children[0].querySelector('td');
+
+    console.log('Check Scout Arti: ', checkScoutArti);
+
+    if (checkScoutArti && checkScoutArti.children.length === 1) {
+      reportType = reportWrapper
+        .querySelector('table.additionalInformation')
+        .children[0].children[1].querySelector('th').innerText;
+
+      hasScoutArti = true;
+      console.log('Updated Report Type: ', reportType);
+    }
+  }
 
   // Attempt to log resources or info
   let resources = {};
   let information = {};
 
   try {
-    if (reportType === "Information") {
-      information = extractInformation(reportWrapper);
+    if (reportType === 'Information') {
+      information = extractInformation(reportWrapper, hasScoutArti);
     } else {
-      resources = extractResources(reportWrapper);
+      resources = extractResources(reportWrapper, hasScoutArti);
     }
   } catch (error) {
-    console.error("Error in info section: ", error);
+    console.error('Error in info section: ', error);
   }
-  console.log("Resources: ", resources);
-  console.log("Information: ", information);
+  console.log('Resources: ', resources);
+  console.log('Information: ', information);
 
   // Send report data
   await sendReportData({
